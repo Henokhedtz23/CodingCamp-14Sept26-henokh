@@ -1,0 +1,565 @@
+/* css/style.css — Expense & Budget Visualizer
+   Requirements: 9.1, 9.2, 10.1, 10.2, 10.3, 10.4
+   ================================================================ */
+
+/* ================================================================
+   1. CSS Custom Properties — Light Theme
+   ================================================================ */
+[data-theme="light"] {
+  --color-bg:            #ffffff;
+  --color-bg-secondary:  #f5f5f5;
+  --color-surface:       #ffffff;
+  --color-border:        #d1d5db;
+  --color-text:          #111827;
+  --color-text-muted:    #4b5563;   /* darkened from #6b7280 for 4.5:1 on white */
+  --color-accent:        #1d4ed8;   /* darkened from #2563eb for 4.5:1 on white */
+  --color-accent-hover:  #1e40af;
+  --color-danger:        #b91c1c;   /* darkened from #dc2626 for 4.5:1 on white */
+  --color-danger-hover:  #991b1b;
+  --color-success:       #15803d;   /* darkened from #16a34a for 4.5:1 on white */
+  --color-focus-ring:    #1d4ed8;
+  --color-shadow:        rgba(0, 0, 0, 0.08);
+}
+
+/* ================================================================
+   2. CSS Custom Properties — Dark Theme
+   ================================================================ */
+[data-theme="dark"] {
+  --color-bg:            #111827;
+  --color-bg-secondary:  #1f2937;
+  --color-surface:       #1f2937;
+  --color-border:        #4b5563;   /* lightened from #374151 for visibility */
+  --color-text:          #f9fafb;
+  --color-text-muted:    #d1d5db;   /* lightened from #9ca3af for 4.5:1 on dark bg */
+  --color-accent:        #93c5fd;   /* lightened from #3b82f6 for 4.5:1 on dark bg */
+  --color-accent-hover:  #bfdbfe;
+  --color-danger:        #fca5a5;   /* lightened from #ef4444 for 4.5:1 on dark bg */
+  --color-danger-hover:  #fecaca;
+  --color-success:       #86efac;   /* lightened from #22c55e for 4.5:1 on dark bg */
+  --color-focus-ring:    #93c5fd;
+  --color-shadow:        rgba(0, 0, 0, 0.4);
+}
+
+/* ================================================================
+   3. Reset & Base
+   ================================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;          /* baseline; all rem units are relative to this */
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 1rem;          /* 16px minimum per Requirement 10.2 */
+  line-height: 1.6;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+
+  /* Theme transition ≤ 100 ms per Requirement 9.2 */
+  transition:
+    background-color 80ms ease,
+    color 80ms ease,
+    border-color 80ms ease;
+
+  min-height: 100dvh;
+}
+
+/* ================================================================
+   4. Typography — distinct heading levels for visual hierarchy
+   ================================================================ */
+h1, h2, h3 {
+  color: var(--color-text);
+  line-height: 1.3;
+  transition: color 80ms ease;
+}
+
+h1 { font-size: 1.5rem;   font-weight: 700; }  /* 24px */
+h2 { font-size: 1.25rem;  font-weight: 600; }  /* 20px */
+h3 { font-size: 1.0625rem; font-weight: 600; } /* 17px */
+
+p, li, label, span, input, select, button {
+  font-size: 1rem;           /* never below 16px */
+}
+
+/* ================================================================
+   5. Screen-reader only utility (Requirement 10.3)
+   ================================================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ================================================================
+   6. Layout — App Header
+   ================================================================ */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background-color: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  transition:
+    background-color 80ms ease,
+    border-color 80ms ease;
+}
+
+.app-title {
+  font-size: 1.375rem;    /* 22px — stays clearly h1 without overwhelming */
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* ================================================================
+   7. Layout — Main Content
+   Responsive single-column, max-width container centered
+   ================================================================ */
+.app-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+}
+
+/* Sections share a card-like surface */
+.balance-section,
+.form-section,
+.sort-section,
+.chart-section {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  transition:
+    background-color 80ms ease,
+    border-color 80ms ease;
+}
+
+.section-heading {
+  margin-bottom: 0.875rem;
+  color: var(--color-text);
+}
+
+/* ================================================================
+   8. Balance Display
+   ================================================================ */
+.balance-amount {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  transition: color 80ms ease;
+}
+
+/* ================================================================
+   9. Form Styles
+   ================================================================ */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+/* Inline variant for custom-category row */
+.form-group--inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.form-group--inline .form-input {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.form-label {
+  font-size: 1rem;         /* 16px minimum per Requirement 10.2 */
+  font-weight: 500;
+  color: var(--color-text);
+  transition: color 80ms ease;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  appearance: auto;
+  transition:
+    background-color 80ms ease,
+    color 80ms ease,
+    border-color 80ms ease;
+}
+
+.form-input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+/* Inline select (sort control) */
+.form-select--inline {
+  width: auto;
+  min-width: 10rem;
+}
+
+/* ================================================================
+   10. Focus Indicators — ≥ 3:1 contrast (Requirements 10.3, 10.4)
+       Using a 2px solid ring offset from the element
+   ================================================================ */
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Remove browser default where we have :focus-visible */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.form-input:focus-visible,
+.form-select:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 0;
+  border-color: var(--color-focus-ring);
+}
+
+/* ================================================================
+   11. Buttons
+   ================================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 500;
+  line-height: 1.25;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color 80ms ease,
+    color 80ms ease,
+    border-color 80ms ease,
+    box-shadow 80ms ease;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Primary button (Add Transaction) */
+.btn--primary {
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+  border-color: var(--color-accent);
+}
+
+[data-theme="dark"] .btn--primary {
+  color: #111827;   /* ensure dark text on light accent in dark mode */
+}
+
+.btn--primary:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+/* Secondary button (Add Category) */
+.btn--secondary {
+  background-color: transparent;
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background-color: var(--color-accent);
+  color: var(--color-bg);
+}
+
+[data-theme="dark"] .btn--secondary:hover:not(:disabled) {
+  color: #111827;
+}
+
+/* Delete button */
+.btn--delete {
+  background-color: transparent;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  padding: 0.25rem 0.625rem;
+  font-size: 1rem;          /* 16px minimum per Requirement 10.2 */
+  flex-shrink: 0;
+}
+
+.btn--delete:hover:not(:disabled) {
+  background-color: var(--color-danger);
+  color: var(--color-bg);
+}
+
+[data-theme="dark"] .btn--delete:hover:not(:disabled) {
+  color: #111827;
+}
+
+/* Icon button (Theme toggle) */
+.btn--icon {
+  background-color: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border);
+  padding: 0.375rem 0.75rem;
+  gap: 0.25rem;
+}
+
+.btn--icon:hover:not(:disabled) {
+  background-color: var(--color-bg-secondary);
+}
+
+/* Theme toggle icon visibility — show the right icon for current theme */
+[data-theme="light"] .theme-icon--dark  { display: none; }
+[data-theme="light"] .theme-icon--light { display: inline; }
+[data-theme="dark"]  .theme-icon--light { display: none; }
+[data-theme="dark"]  .theme-icon--dark  { display: inline; }
+
+.theme-label {
+  font-size: 1rem;          /* 16px minimum per Requirement 10.2 */
+}
+
+/* ================================================================
+   12. Custom Category Sub-form
+   ================================================================ */
+.custom-category-form {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  transition: border-color 80ms ease;
+}
+
+.sub-heading {
+  margin-bottom: 0.625rem;
+  color: var(--color-text-muted);
+  transition: color 80ms ease;
+}
+
+/* ================================================================
+   13. Sort Control
+   ================================================================ */
+.sort-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.sort-control .form-label {
+  white-space: nowrap;
+}
+
+/* ================================================================
+   14. Transaction List — scrollable container
+   ================================================================ */
+.transaction-list {
+  list-style: none;
+  max-height: 20rem;      /* scrollable after ~5-6 items */
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  transition: border-color 80ms ease;
+}
+
+/* Scrollbar styling for webkit browsers */
+.transaction-list::-webkit-scrollbar {
+  width: 6px;
+}
+.transaction-list::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+.transaction-list::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+/* Empty state */
+.transaction-list__empty {
+  padding: 1.25rem 1rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  font-style: italic;
+  transition: color 80ms ease;
+}
+
+/* Individual transaction item */
+.transaction-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 80ms ease, border-color 80ms ease;
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-item:hover {
+  background-color: var(--color-bg-secondary);
+}
+
+.transaction-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;          /* allow text to truncate within flex container */
+}
+
+.transaction-item__name {
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 80ms ease;
+}
+
+.transaction-item__meta {
+  font-size: 1rem;          /* 16px minimum per Requirement 10.2 */
+  color: var(--color-text-muted);
+  transition: color 80ms ease;
+}
+
+/* ================================================================
+   15. Chart Area
+   ================================================================ */
+.chart-placeholder,
+.chart-error {
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 1rem 0;
+  font-style: italic;
+  transition: color 80ms ease;
+}
+
+/* chart-container constrains max-width so canvas never overflows */
+.chart-container {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: auto !important;
+}
+
+/* ================================================================
+   16. Alert / Error display
+   ================================================================ */
+/* Inline field-level errors */
+.field-error {
+  font-size: 1rem;          /* 16px minimum per Requirement 10.2 */
+  color: var(--color-danger);
+  min-height: 1.25em;         /* reserve space so layout doesn't jump */
+  transition: color 80ms ease;
+}
+
+/* Global alert banner (Storage warning, etc.) */
+.alert-banner {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+  border-radius: 0.375rem;
+  padding: 0.75rem 1.25rem;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 720px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .alert-banner {
+  background-color: #451a03;
+  color: #fde68a;
+  border-color: #92400e;
+}
+
+/* Hidden modifier — removes from visual flow but role="alert" stays in DOM */
+.alert-banner--hidden,
+.chart-error--hidden {
+  display: none;
+}
+
+/* ================================================================
+   17. Responsive — ensure no horizontal scroll at 320px+
+       (Requirement 10.1)
+   ================================================================ */
+@media (max-width: 480px) {
+  .app-main {
+    padding: 0.75rem 0.75rem;
+    gap: 1rem;
+  }
+
+  .balance-section,
+  .form-section,
+  .sort-section,
+  .chart-section {
+    padding: 1rem 0.875rem;
+  }
+
+  .balance-amount {
+    font-size: 1.625rem;
+  }
+
+  .app-title {
+    font-size: 1.125rem;
+  }
+
+  /* Stack the inline category group vertically on very small screens */
+  .form-group--inline {
+    flex-direction: column;
+  }
+
+  .form-group--inline .form-input {
+    width: 100%;
+  }
+
+  .transaction-item {
+    flex-wrap: wrap;
+  }
+}
+
+/* Prevent any element from causing horizontal overflow */
+img, canvas, video, embed, object, iframe {
+  max-width: 100%;
+}

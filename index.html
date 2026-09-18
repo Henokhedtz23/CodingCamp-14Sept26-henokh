@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense &amp; Budget Visualizer</title>
+
+  <!-- Apply saved theme before first paint to prevent flash-of-wrong-theme -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('ebv_theme');
+        if (saved === 'dark' || saved === 'light') {
+          document.documentElement.setAttribute('data-theme', saved);
+        }
+      } catch (e) {
+        // localStorage unavailable — leave default 'light' theme
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ================================================================
+       TOP BAR: App title + Theme toggle
+  ================================================================ -->
+  <header class="app-header">
+    <h1 class="app-title">Expense &amp; Budget Visualizer</h1>
+    <button
+      id="theme-toggle"
+      class="btn btn--icon"
+      type="button"
+      aria-label="Switch to dark mode"
+      aria-pressed="false"
+    >
+      <span class="theme-icon theme-icon--light" aria-hidden="true">☀️</span>
+      <span class="theme-icon theme-icon--dark"  aria-hidden="true">🌙</span>
+      <span class="theme-label">Dark/Light&nbsp;Mode</span>
+    </button>
+  </header>
+
+  <!-- Global storage warning banner (hidden by default) -->
+  <div
+    id="global-alert"
+    class="alert-banner alert-banner--hidden"
+    role="alert"
+    aria-live="polite"
+  ></div>
+
+  <!-- ================================================================
+       MAIN CONTENT
+  ================================================================ -->
+  <main class="app-main">
+
+    <!-- ── Balance Display ─────────────────────────────────────── -->
+    <section class="balance-section" aria-labelledby="balance-heading">
+      <h2 id="balance-heading" class="section-heading">Total Expenses</h2>
+      <p class="balance-amount" id="balance-display" aria-live="polite">$0.00</p>
+    </section>
+
+    <!-- ── Transaction Form ────────────────────────────────────── -->
+    <section class="form-section" aria-labelledby="form-heading">
+      <h2 id="form-heading" class="section-heading">Add Transaction</h2>
+
+      <form id="transaction-form" novalidate>
+
+        <!-- Item Name -->
+        <div class="form-group">
+          <label for="input-name" class="form-label">Item Name</label>
+          <input
+            type="text"
+            id="input-name"
+            name="name"
+            class="form-input"
+            placeholder="e.g. Grocery run"
+            maxlength="100"
+            autocomplete="off"
+            required
+            aria-required="true"
+            aria-describedby="error-name"
+          />
+          <span
+            id="error-name"
+            class="field-error"
+            role="alert"
+            aria-live="assertive"
+          ></span>
+        </div>
+
+        <!-- Amount -->
+        <div class="form-group">
+          <label for="input-amount" class="form-label">Amount ($)</label>
+          <input
+            type="number"
+            id="input-amount"
+            name="amount"
+            class="form-input"
+            placeholder="0.00"
+            min="0.01"
+            max="999999999.99"
+            step="0.01"
+            required
+            aria-required="true"
+            aria-describedby="error-amount"
+          />
+          <span
+            id="error-amount"
+            class="field-error"
+            role="alert"
+            aria-live="assertive"
+          ></span>
+        </div>
+
+        <!-- Category Selector -->
+        <div class="form-group">
+          <label for="select-category" class="form-label">Category</label>
+          <select
+            id="select-category"
+            name="category"
+            class="form-select"
+            required
+            aria-required="true"
+            aria-describedby="error-category"
+          >
+            <option value="Food">Food</option>
+            <option value="Transport">Transport</option>
+            <option value="Fun">Fun</option>
+          </select>
+          <span
+            id="error-category"
+            class="field-error"
+            role="alert"
+            aria-live="assertive"
+          ></span>
+        </div>
+
+        <button type="submit" class="btn btn--primary" id="btn-add-transaction">
+          Add Transaction
+        </button>
+      </form>
+
+      <!-- Custom Category Sub-form -->
+      <div class="custom-category-form" aria-labelledby="custom-cat-heading">
+        <h3 id="custom-cat-heading" class="sub-heading">Add Custom Category</h3>
+        <div class="form-group form-group--inline">
+          <label for="input-custom-category" class="form-label sr-only">
+            New category name
+          </label>
+          <input
+            type="text"
+            id="input-custom-category"
+            name="customCategory"
+            class="form-input"
+            placeholder="New category name"
+            maxlength="50"
+            autocomplete="off"
+            aria-describedby="error-custom-category"
+          />
+          <button
+            type="button"
+            class="btn btn--secondary"
+            id="btn-add-category"
+          >
+            Add Category
+          </button>
+        </div>
+        <span
+          id="error-custom-category"
+          class="field-error"
+          role="alert"
+          aria-live="assertive"
+        ></span>
+      </div>
+    </section>
+
+    <!-- ── Sort Control ────────────────────────────────────────── -->
+    <section class="sort-section" aria-labelledby="sort-heading">
+      <h2 id="sort-heading" class="section-heading">Transactions</h2>
+
+      <div class="sort-control">
+        <label for="select-sort" class="form-label">Sort by:</label>
+        <select id="select-sort" class="form-select form-select--inline">
+          <option value="amount-asc" selected>Amount: Low → High</option>
+          <option value="amount-desc">Amount: High → Low</option>
+          <option value="category-az">Category: A → Z</option>
+          <option value="category-za">Category: Z → A</option>
+        </select>
+      </div>
+
+      <!-- Transaction List -->
+      <ul
+        id="transaction-list"
+        class="transaction-list"
+        aria-label="Transaction list"
+        aria-live="polite"
+      >
+        <!-- Empty state (shown when no transactions exist) -->
+        <li class="transaction-list__empty" id="transaction-empty-state">
+          No transactions added yet.
+        </li>
+      </ul>
+
+      <!-- Storage error for delete failures -->
+      <div
+        id="error-delete"
+        class="field-error"
+        role="alert"
+        aria-live="assertive"
+      ></div>
+    </section>
+
+    <!-- ── Chart ──────────────────────────────────────────────── -->
+    <section class="chart-section" aria-labelledby="chart-heading">
+      <h2 id="chart-heading" class="section-heading">Spending by Category</h2>
+
+      <!-- Shown when there are no transactions -->
+      <p
+        id="chart-placeholder"
+        class="chart-placeholder"
+        aria-live="polite"
+      >
+        No data available. Add transactions to see the chart.
+      </p>
+
+      <!-- Chart.js renders here; hidden when no transactions -->
+      <div class="chart-container" id="chart-container" aria-hidden="true" style="display:none">
+        <canvas id="spending-chart" aria-label="Spending distribution pie chart" role="img"></canvas>
+      </div>
+
+      <!-- Shown if Chart.js CDN failed to load -->
+      <p
+        id="chart-load-error"
+        class="chart-error chart-error--hidden"
+        role="alert"
+      >
+        Chart could not be loaded.
+      </p>
+    </section>
+
+  </main>
+
+  <!-- ================================================================
+       Chart.js CDN — must load before app.js
+  ================================================================ -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+  <!-- Application logic -->
+  <script src="js/app.js" defer></script>
+
+</body>
+</html>

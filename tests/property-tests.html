@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Property-Based Tests — Expense &amp; Budget Visualizer</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+    h1   { font-size: 1.5rem; margin-bottom: 1rem; }
+    h2   { font-size: 1.25rem; margin: 1.5rem 0 0.5rem; border-bottom: 1px solid #ccc; padding-bottom: 0.25rem; }
+    .result { padding: 0.5rem 0.75rem; border-radius: 0.375rem; margin-bottom: 0.5rem; font-size: 1rem; }
+    .pass  { background: #d1fae5; color: #065f46; }
+    .fail  { background: #fee2e2; color: #991b1b; white-space: pre-wrap; word-break: break-word; }
+    .info  { background: #dbeafe; color: #1e40af; }
+    #summary { margin-top: 2rem; font-weight: bold; font-size: 1.125rem; }
+  </style>
+</head>
+<body>
+
+<h1>Property-Based Tests — Expense &amp; Budget Visualizer</h1>
+<p class="result info">Loading fast-check from CDN… results will appear below.</p>
+<div id="output"></div>
+<div id="summary"></div>
+
+<!--
+  fast-check UMD bundle — exposes window.fc
+  https://github.com/dubzzz/fast-check
+-->
+<script src="https://cdn.jsdelivr.net/npm/fast-check@3.14.0/lib/bundle/fast-check.min.js"></script>
+
+<script>
+/* ================================================================
+   INLINE PURE SERVICE FUNCTIONS
+   Copied from js/app.js — DOM-free logic only.
+   Keep in sync with the main application file.
+================================================================ */
+
+// ── TransactionService ────────────────────────────────────────────
+var TransactionService = {
+  validate: function (name, amountStr, category) {
+    var errors = [];
+    if (!name || name.trim().length === 0) {
+      errors.push('Item name is required.');
+    }
+    var amount = parseFloat(amountStr);
+    if (amountStr === '' || amountStr === null || amountStr === undefined || isNaN(amount)) {
+      errors.push('Amount is required and must be a valid number.');
+    } else if (amount < 0.01 || amount > 999999999.99) {
+      errors.push('Amount must be between 0.01 and 999,999,999.99.');
+    }
+    if (!category || category.trim().length === 0) {
+      errors.push('Category is required.');
+    }
+    return { valid: errors.length === 0, errors: errors };
+  },
+
+  add: function (state, name, amount, category) {
+    var id;
+    try { id = crypto.randomUUID(); } catch (e) {
+      id = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+    }
+    var transaction = {
+      id:        id,
+      name:      name.trim(),
+      amount:    parseFloat(parseFloat(amount).toFixed(2)),
+      category:  category.trim(),
+      createdAt: Date.now(),
+    };
+    return [transaction].concat(state.transactions);
+  },
+
+  remove: function (state, id) {
+    return state.transactions.filter(function (t) { return t.id !== id; });
+  },
+
+  sort: function (transactions, sortOrder) {
+    var copy = transactions.slice();
+    copy.sort(function (a, b) {
+      if (sortOrder === 'amount-asc') {
+        if (a.amount !== b.amount) return a.amount - b.amount;
+        return a.createdAt - b.createdAt;
+      }
+      if (sortOrder === 'amount-desc') {
+        if (a.amount !== b.amount) return b.amount - a.amount;
+        return a.createdAt - b.createdAt;
+      }
+      if (sortOrder === 'category-az') {
+        var cmp = a.category.localeCompare(b.category);
+        if (cmp !== 0) return cmp;
+        return a.createdAt - b.createdAt;
+      }
+      return 0;
+    });
+    return copy;
+  },
+
+  computeBalance: function (transactions) {
+    if (!transactions || transactions.length === 0) return 0;
+    var totalCents = transactions.reduce(function (sum, t) {
+      return sum + Math.round(t.amount * 100);
+    }, 0);
+    return totalCents / 100;
+  },
+};
+
+// ── CategoryService ───────────────────────────────────────────────
+var CategoryService = {
+  DEFAULT_CATEGORIES: ['Food', 'Transport', 'Fun'],
+
+  validateNew: function (name, existing) {
+    if (!name || name.trim().length === 0) {
+      return { valid: false, error: 'Category name is required.' };
+    }
+    var normalized = name.trim().toLowerCase();
+    var isDuplicate = existing.some(function (cat) {
+      return cat.toLowerCase() === normalized;
+    });
+    if (isDuplicate) {
+      return { valid: false, error: 'A category with that name already exists.' };
+    }
+    return { valid: true, error: null };
+  },
+
+  add: function (existing, name) {
+    return existing.concat([name.trim()]);
+  },
+
+  remove: function (existing, name) {
+    return existing.filter(function (cat) { return cat !== name; });
+  },
+};
+
+// ── ChartService ──────────────────────────────────────────────────
+var ChartService = {
+  PALETTE: [
+    '#4e79a7','#f28e2b','#e15759','#76b7b2',
+    '#59a14f','#edc948','#b07aa1','#ff9da7',
+    '#9c755f','#bab0ac','#aaaaaa',
+  ],
+
+  aggregate: function (transactions) {
+    var totalsMap = {};
+    if (Array.isArray(transactions)) {
+      transactions.forEach(function (t) {
+        if (t.amount > 0) {
+          if (Object.prototype.hasOwnProperty.call(totalsMap, t.category)) {
+            totalsMap[t.category] = Math.round(totalsMap[t.category] * 100 + t.amount * 100) / 100;
+          } else {
+            totalsMap[t.category] = Math.round(t.amount * 100) / 100;
+          }
+        }
+      });
+    }
+    var sorted = Object.keys(totalsMap)
+      .map(function (cat) { return { category: cat, total: totalsMap[cat] }; })
+      .sort(function (a, b) { return b.total - a.total; });
+
+    var labels = [], data = [], colors = [];
+    if (sorted.length === 0) return { labels: labels, data: data, colors: colors };
+
+    var top  = sorted.slice(0, 10);
+    var rest = sorted.slice(10);
+
+    top.forEach(function (item, i) {
+      labels.push(item.category);
+      data.push(item.total);
+      colors.push(ChartService.PALETTE[i] || ChartService.PALETTE[0]);
+    });
+
+    if (rest.length > 0) {
+      var otherTotal = rest.reduce(function (sum, item) {
+        return Math.round(sum * 100 + item.total * 100) / 100;
+      }, 0);
+      labels.push('Other');
+      data.push(otherTotal);
+      colors.push(ChartService.PALETTE[10]);
+    }
+
+    return { labels: labels, data: data, colors: colors };
+  },
+};
+
+// ── StorageService (in-memory stub for Property 7) ─────────────────
+var StorageServiceStub = {
+  serialize: function (state) {
+    return {
+      transactions: JSON.stringify(state.transactions),
+      categories:   JSON.stringify(state.categories),
+      theme:        state.theme,
+    };
+  },
+
+  deserialize: function (raw) {
+    return {
+      transactions: JSON.parse(raw.transactions),
+      categories:   JSON.parse(raw.categories),
+      theme:        raw.theme,
+    };
+  },
+};
+
+
+/* ================================================================
+   TEST RUNNER
+================================================================ */
+var passed = 0;
+var failed = 0;
+var outputEl = document.getElementById('output');
+
+function runTest(title, fn) {
+  var section = document.createElement('div');
+  var h2 = document.createElement('h2');
+  h2.textContent = title;
+  section.appendChild(h2);
+
+  var resultEl = document.createElement('div');
+  resultEl.className = 'result';
+  try {
+    fn();
+    resultEl.textContent = '✅ PASS';
+    resultEl.classList.add('pass');
+    passed++;
+  } catch (e) {
+    resultEl.textContent = '❌ FAIL\n' + (e && e.message ? e.message : String(e));
+    resultEl.classList.add('fail');
+    failed++;
+  }
+
+  section.appendChild(resultEl);
+  outputEl.appendChild(section);
+}
+
+
+/* ================================================================
+   ARBITRARIES (generators)
+================================================================ */
+
+// Arbitrary: valid amount (0.01 – 999,999,999.99, 2 decimal places)
+var validAmountArb = fc.float({ min: 0.01, max: 999999999.99, noNaN: true, noDefaultInfinity: true })
+  .map(function (v) { return parseFloat(v.toFixed(2)); })
+  .filter(function (v) { return v >= 0.01 && v <= 999999999.99; });
+
+// Arbitrary: non-empty trimmed string up to N chars
+function nonEmptyStringArb(maxLen) {
+  return fc.string({ minLength: 1, maxLength: maxLen || 50 })
+    .filter(function (s) { return s.trim().length > 0; });
+}
+
+// Arbitrary: valid category name
+var categoryNameArb = nonEmptyStringArb(50);
+
+// Arbitrary: valid transaction object (already stored form — not raw form input)
+var transactionArb = fc.record({
+  id:        fc.uuidV4(),
+  name:      nonEmptyStringArb(100),
+  amount:    validAmountArb,
+  category:  categoryNameArb,
+  createdAt: fc.integer({ min: 0, max: Date.now() + 100000 }),
+});
+
+// Arbitrary: sort order
+var sortOrderArb = fc.constantFrom('amount-asc', 'amount-desc', 'category-az');
+
+
+/* ================================================================
+   PROPERTY 1: Balance equals sum of all amounts
+   Validates: Requirements 6.1, 6.4
+================================================================ */
+runTest('Property 1: Balance equals sum of all amounts (Validates: Requirements 6.1, 6.4)', function () {
+  fc.assert(fc.property(
+    fc.array(transactionArb, { minLength: 0, maxLength: 50 }),
+    function (transactions) {
+      var computed = TransactionService.computeBalance(transactions);
+
+      // Manual integer-cent sum (same approach as implementation)
+      var expectedCents = transactions.reduce(function (sum, t) {
+        return sum + Math.round(t.amount * 100);
+      }, 0);
+      var expected = expectedCents / 100;
+
+      if (Math.abs(computed - expected) > 0.001) {
+        throw new Error('Balance mismatch. Got ' + computed + ', expected ' + expected);
+      }
+
+      // Empty list must return 0
+      if (transactions.length === 0 && computed !== 0) {
+        throw new Error('Expected 0 for empty list, got ' + computed);
+      }
+
+      return true;
+    }
+  ), { numRuns: 100 });
+});
+
+
+/* ================================================================
+   PROPERTY 2: Valid transaction inputs accepted; invalid rejected
+   Validates: Requirements 1.4, 1.5, 1.6
+================================================================ */
+runTest('Property 2: Valid inputs accepted; invalid inputs rejected (Validates: Requirements 1.4, 1.5, 1.6)', function () {
+  // 2a: Valid inputs always pass
+  fc.assert(fc.property(
+    nonEmptyStringArb(100),
+    validAmountArb,
+    categoryNameArb,
+    function (name, amount, category) {
+      var result = TransactionService.validate(name, String(amount), category);
+      if (!result.valid) {
+        throw new Error('Expected valid for name=' + name + ' amount=' + amount + ' category=' + category + ' but got errors: ' + result.errors.join(', '));
+      }
+      return true;
+    }
+  ), { numRuns: 100 });
+
+  // 2b: Empty / whitespace-only name is always rejected
+  fc.assert(fc.property(
+    fc.constantFrom('', '   ', '\t', '\n'),
+    validAmountArb,
+    categoryNameArb,
+    function (emptyName, amount, category) {
+      var result = TransactionService.validate(emptyName, String(amount), category);
+      if (result.valid) {
+        throw new Error('Expected invalid for empty name but got valid');
+      }
+      return true;
+    }
+  ), { numRuns: 100 });
+
+  // 2c: Amount out of range is always rejected
+  fc.assert(fc.property(
+    nonEmptyStringArb(100),
+    categoryNameArb,
+    fc.oneof(
+      fc.float({ min: -1000000, max: 0, noNaN: true }).map(function (v) { return v.toFixed(2); }),
+      fc.constant('0'),
+      fc.constant('0.00'),
+      fc.constant('0.001'),
+      fc.constant('1000000000'),
+      fc.constant('999999999.999')
+    ),
+    function (name, category, badAmount) {
+      var result = TransactionService.validate(name, badAmount, category);
+      if (result.valid) {
+        throw new Error('Expected invalid for amount=' + badAmount + ' but got valid');
+      }
+      return true;
+    }
+  ), { numRuns: 100 });
+});
+
+
+/* ================================================================
+   PROPERTY 3: Duplicate and empty categories are rejected
+   Validates: Requirements 2.3, 2.4
+================================================================ */
+runTest('Property 3: Duplicate and empty categories are rejected (Validates: Requirements 2.3, 2.4)', function () {
+  // 3a: Empty / whitespace-only names are always rejected
+  fc.assert(fc.property(
+    fc.constantFrom('', '   ', '\t'),
+    fc.array(categoryNameArb, { minLength: 0, maxLength: 10 }),
+    function (emptyName, existing) {
+      var result = CategoryService.validateNew(emptyName, existing);
+      if (result.valid) {
+        throw new Error('Expected invalid for empty category name but got valid');
+      }
+      return true;
+    }
+  ), { numRuns: 100 });
+
+  // 3b: Exact duplicates are rejected
+  fc.assert(fc.property(
+    categoryNameArb,
+    function (name) {
+      var existing = [name];
+      var result = CategoryService.validateNew(name, existing);
+      if (result.valid) {
+        throw new Error('Expected duplicate rejection for ' + name);
+      }
+      return true;
+    }
+  ), { numRuns: 100 });
+
+  // 3c: Case-insensitive duplicates are rejected
+  fc.assert(fc.property(
+    fc.stringMatching(/^[a-zA-Z]{1,20}$/).filter(function (s) { return s.trim().length > 0; }),
+    function (name) {
+      var upper = name.toUpperCase();
+      var lower = name.toLowerCase();
+      var existing = [upper];
+      var result = CategoryService.validateNew(lower, existing);
+      if (result.valid) {
+        throw new Error('Expected case-insensitive duplicate rejection for ' + lower + ' vs ' + upper);
+      }
+      return true;
+    }
+  ), { numRuns: 100 });
+
+  // 3d: Genuinely new names are accepted
+  fc.assert(fc.property(
+    categoryNameArb,
+    function (name) {
+      // Existing list explicitly does NOT contain this name
+      var existing = CategoryService.DEFAULT_CATEGORIES.filter(function (c) {
+        return c.toLowerCase() !== name.trim().toLowerCase();
+      });
+      var result = CategoryService.validateNew(name, existing);
+      if (!result.valid) {
+        throw new Error('Expected valid for new category name "' + name + '" but got error: ' + result.error);
+      }
+      return true;
+    }
+  ), { numRuns: 100 });
+});
+
+
+/* ================================================================
+   PROPERTY 4: Sort preserves all transactions
+   Validates: Requirements 4.3
+================================================================ */
+runTest('Property 4: Sort preserves all transactions (Validates: Requirements 4.3)', function () {
+  fc.assert(fc.property(
+    fc.array(transactionArb, { minLength: 0, maxLength: 30 }),
+    sortOrderArb,
+    function (transactions, sortOrder) {
+      var sorted = TransactionService.sort(transactions, sortOrder);
+
+      // Same length
+      if (sorted.length !== transactions.length) {
+        throw new Error('Length changed after sort: ' + transactions.length + ' → ' + sorted.length);
+      }
+
+      // Same set of IDs
+      var originalIds = transactions.map(function (t) { return t.id; }).sort();
+      var sortedIds   = sorted.map(function (t) { return t.id; }).sort();
+      for (var i = 0; i < originalIds.length; i++) {
+        if (originalIds[i] !== sortedIds[i]) {
+          throw new Error('ID set mismatch after sort');
+        }
+      }
+
+      // Tie-breaking: for amount-asc and amount-desc, equal-amount transactions
+      // must appear in createdAt ascending order
+      if (sortOrder === 'amount-asc' || sortOrder === 'amount-desc') {
+        for (var j = 0; j < sorted.length - 1; j++) {
+          var a = sorted[j], b = sorted[j + 1];
+          if (a.amount === b.amount && a.createdAt > b.createdAt) {
+            throw new Error('Tie-break violated: equal amounts not in insertion order');
+          }
+        }
+      }
+
+      return true;
+    }
+  ), { numRuns: 100 });
+});
+
+
+/* ================================================================
+   PROPERTY 5: Chart aggregation top-10 grouping invariant
+   Validates: Requirements 7.1, 7.7
+================================================================ */
+runTest('Property 5: Chart aggregation top-10 grouping invariant (Validates: Requirements 7.1, 7.7)', function () {
+  // Generate 11+ distinct categories by appending an index to ensure uniqueness
+  var manyTransactionsArb = fc.integer({ min: 11, max: 20 }).chain(function (numCats) {
+    return fc.array(
+      fc.record({
+        amount:   validAmountArb,
+        catIndex: fc.integer({ min: 0, max: numCats - 1 }),
+      }),
+      { minLength: numCats, maxLength: numCats * 3 }
+    ).map(function (items) {
+      return items.map(function (item, i) {
+        return {
+          id:        String(i),
+          name:      'item' + i,
+          amount:    item.amount,
+          category:  'Category_' + item.catIndex,
+          createdAt: i,
+        };
+      });
+    });
+  });
+
+  fc.assert(fc.property(
+    manyTransactionsArb,
+    function (transactions) {
+      // Ensure we actually have > 10 distinct categories with positive amounts
+      var distinctCats = {};
+      transactions.forEach(function (t) {
+        if (t.amount > 0) distinctCats[t.category] = true;
+      });
+      var numDistinct = Object.keys(distinctCats).length;
+      if (numDistinct <= 10) return true; // generator may produce fewer; skip
+
+      var result = ChartService.aggregate(transactions);
+
+      // Must have exactly 11 segments (10 named + "Other")
+      if (result.labels.length !== 11) {
+        throw new Error('Expected 11 segments, got ' + result.labels.length + ' for ' + numDistinct + ' distinct categories');
+      }
+
+      // Last segment must be "Other"
+      if (result.labels[result.labels.length - 1] !== 'Other') {
+        throw new Error('Expected last segment to be "Other", got ' + result.labels[result.labels.length - 1]);
+      }
+
+      // Sum of all segment values must equal sum of all positive transaction amounts
+      var expectedTotal = transactions.reduce(function (sum, t) {
+        return t.amount > 0 ? Math.round(sum * 100 + t.amount * 100) / 100 : sum;
+      }, 0);
+      var actualTotal = result.data.reduce(function (sum, v) {
+        return Math.round(sum * 100 + v * 100) / 100;
+      }, 0);
+
+      if (Math.abs(actualTotal - expectedTotal) > 0.02) {
+        throw new Error('Sum mismatch: expected ' + expectedTotal + ', got ' + actualTotal);
+      }
+
+      return true;
+    }
+  ), { numRuns: 100 });
+});
+
+
+/* ================================================================
+   PROPERTY 6: Add/delete transaction round trip
+   Validates: Requirements 5.2, 5.3, 5.4, 8.1, 8.2
+================================================================ */
+runTest('Property 6: Add/delete transaction round trip (Validates: Requirements 5.2, 5.3, 5.4, 8.1, 8.2)', function () {
+  fc.assert(fc.property(
+    fc.array(transactionArb, { minLength: 0, maxLength: 20 }),
+    nonEmptyStringArb(100),
+    validAmountArb,
+    categoryNameArb,
+    function (initialTransactions, name, amount, category) {
+      var stateBefore = { transactions: initialTransactions.slice() };
+
+      var balanceBefore = TransactionService.computeBalance(stateBefore.transactions);
+      var chartBefore   = ChartService.aggregate(stateBefore.transactions);
+
+      // Add the transaction
+      var afterAdd = TransactionService.add(stateBefore, name, amount, category);
+      var addedId  = afterAdd[0].id; // newest-first, so index 0
+
+      // Delete the same transaction
+      var stateAfterAdd    = { transactions: afterAdd };
+      var afterDelete      = TransactionService.remove(stateAfterAdd, addedId);
+
+      var balanceAfter = TransactionService.computeBalance(afterDelete);
+      var chartAfter   = ChartService.aggregate(afterDelete);
+
+      // Balance must be restored
+      if (Math.abs(balanceAfter - balanceBefore) > 0.001) {
+        throw new Error('Balance not restored: before=' + balanceBefore + ' after=' + balanceAfter);
+      }
+
+      // Transaction count must be restored
+      if (afterDelete.length !== initialTransactions.length) {
+        throw new Error('List length not restored: before=' + initialTransactions.length + ' after=' + afterDelete.length);
+      }
+
+      // Chart segment count must be restored
+      if (chartAfter.labels.length !== chartBefore.labels.length) {
+        throw new Error('Chart segment count not restored: before=' + chartBefore.labels.length + ' after=' + chartAfter.labels.length);
+      }
+
+      return true;
+    }
+  ), { numRuns: 100 });
+});
+
+
+/* ================================================================
+   PROPERTY 7: localStorage serialization round trip
+   Validates: Requirements 8.5
+================================================================ */
+runTest('Property 7: localStorage serialization round trip (Validates: Requirements 8.5)', function () {
+  var themeArb = fc.constantFrom('light', 'dark');
+
+  fc.assert(fc.property(
+    fc.array(transactionArb, { minLength: 0, maxLength: 20 }),
+    fc.array(categoryNameArb, { minLength: 1, maxLength: 15 }),
+    themeArb,
+    function (transactions, categories, theme) {
+      var state = { transactions: transactions, categories: categories, theme: theme };
+
+      // Serialize then deserialize (in-memory stub simulating localStorage JSON round-trip)
+      var serialized   = StorageServiceStub.serialize(state);
+      var deserialized = StorageServiceStub.deserialize(serialized);
+
+      // Theme must be identical
+      if (deserialized.theme !== state.theme) {
+        throw new Error('Theme mismatch: ' + state.theme + ' → ' + deserialized.theme);
+      }
+
+      // Category list must be identical
+      if (deserialized.categories.length !== state.categories.length) {
+        throw new Error('Categories length mismatch');
+      }
+      for (var i = 0; i < state.categories.length; i++) {
+        if (deserialized.categories[i] !== state.categories[i]) {
+          throw new Error('Category[' + i + '] mismatch: ' + state.categories[i] + ' → ' + deserialized.categories[i]);
+        }
+      }
+
+      // Transaction list must be identical (all fields)
+      if (deserialized.transactions.length !== state.transactions.length) {
+        throw new Error('Transactions length mismatch');
+      }
+      for (var j = 0; j < state.transactions.length; j++) {
+        var orig = state.transactions[j];
+        var recv = deserialized.transactions[j];
+        if (orig.id !== recv.id || orig.name !== recv.name || orig.amount !== recv.amount ||
+            orig.category !== recv.category || orig.createdAt !== recv.createdAt) {
+          throw new Error('Transaction[' + j + '] field mismatch');
+        }
+      }
+
+      return true;
+    }
+  ), { numRuns: 100 });
+});
+
+
+/* ================================================================
+   SUMMARY
+================================================================ */
+var summaryEl = document.getElementById('summary');
+var total = passed + failed;
+summaryEl.textContent = 'Results: ' + passed + ' / ' + total + ' properties passed' + (failed > 0 ? ' — ' + failed + ' FAILED' : ' — All good!');
+summaryEl.style.color = failed > 0 ? '#991b1b' : '#065f46';
+
+// Remove the loading message
+var infoEl = document.querySelector('.result.info');
+if (infoEl) infoEl.remove();
+</script>
+
+</body>
+</html>

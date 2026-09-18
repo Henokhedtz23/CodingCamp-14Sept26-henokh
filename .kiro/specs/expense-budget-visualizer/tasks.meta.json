@@ -1,0 +1,251 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Create the directory structure and `index.html` entry point": [
+      {
+        "executionId": "393c28e5-802f-4c0e-a0b4-9fb8233c0320",
+        "chatSessionId": "sess_24462aaa-3b12-4223-a2ae-68d6093468c4",
+        "timestamp": 1789757941115
+      },
+      {
+        "executionId": "393c28e5-802f-4c0e-a0b4-9fb8233c0320",
+        "chatSessionId": "sess_24462aaa-3b12-4223-a2ae-68d6093468c4",
+        "timestamp": 1789758103166
+      }
+    ],
+    "1. Create project file structure and HTML shell": [
+      {
+        "executionId": "393c28e5-802f-4c0e-a0b4-9fb8233c0320",
+        "chatSessionId": "sess_24462aaa-3b12-4223-a2ae-68d6093468c4",
+        "timestamp": 1789758104033
+      }
+    ],
+    "2.1 Write all CSS custom properties and layout styles in `css/style.css`": [
+      {
+        "executionId": "1ddc1102-66af-4c3b-9b44-d9f3fb61ff92",
+        "chatSessionId": "sess_9b366287-6c02-429b-9c49-a871b7721800",
+        "timestamp": 1789758157495
+      },
+      {
+        "executionId": "1ddc1102-66af-4c3b-9b44-d9f3fb61ff92",
+        "chatSessionId": "sess_9b366287-6c02-429b-9c49-a871b7721800",
+        "timestamp": 1789758287099
+      }
+    ],
+    "2. Implement CSS styles and theme system": [
+      {
+        "executionId": "1ddc1102-66af-4c3b-9b44-d9f3fb61ff92",
+        "chatSessionId": "sess_9b366287-6c02-429b-9c49-a871b7721800",
+        "timestamp": 1789758287906
+      }
+    ],
+    "3.1 Write `StorageService` with `load()` and `save()` methods inside the IIFE": [
+      {
+        "executionId": "a8386423-30fd-46d9-8697-d74a4838797e",
+        "chatSessionId": "sess_aef9d1ea-67a2-44ce-99cb-0004c906b162",
+        "timestamp": 1789758328913
+      },
+      {
+        "executionId": "a8386423-30fd-46d9-8697-d74a4838797e",
+        "chatSessionId": "sess_aef9d1ea-67a2-44ce-99cb-0004c906b162",
+        "timestamp": 1789758430179
+      }
+    ],
+    "3. Implement `StorageService` in `js/app.js`": [
+      {
+        "executionId": "a8386423-30fd-46d9-8697-d74a4838797e",
+        "chatSessionId": "sess_aef9d1ea-67a2-44ce-99cb-0004c906b162",
+        "timestamp": 1789758431052
+      }
+    ],
+    "4.1 Write `TransactionService` with `validate()`, `add()`, `remove()`, `sort()`, and `computeBalance()` methods": [
+      {
+        "executionId": "3244f1c3-b56c-4e80-a9a9-ffa065d0b880",
+        "chatSessionId": "sess_500f444e-0787-48a2-b8ca-88453d99e7d9",
+        "timestamp": 1789758464786
+      },
+      {
+        "executionId": "3244f1c3-b56c-4e80-a9a9-ffa065d0b880",
+        "chatSessionId": "sess_500f444e-0787-48a2-b8ca-88453d99e7d9",
+        "timestamp": 1789758534693
+      }
+    ],
+    "4. Implement `TransactionService` in `js/app.js`": [
+      {
+        "executionId": "3244f1c3-b56c-4e80-a9a9-ffa065d0b880",
+        "chatSessionId": "sess_500f444e-0787-48a2-b8ca-88453d99e7d9",
+        "timestamp": 1789758535524
+      }
+    ],
+    "5. Implement `CategoryService` in `js/app.js`": [
+      {
+        "executionId": "337dfb97-8e2d-4b55-ac14-c2c892cdde1e",
+        "chatSessionId": "sess_965dc301-b505-4dd5-84e8-ef3a806ff1b1",
+        "timestamp": 1789758569784
+      },
+      {
+        "executionId": "337dfb97-8e2d-4b55-ac14-c2c892cdde1e",
+        "chatSessionId": "sess_965dc301-b505-4dd5-84e8-ef3a806ff1b1",
+        "timestamp": 1789758638219
+      }
+    ],
+    "5.1 Write `CategoryService` with `DEFAULT_CATEGORIES`, `validateNew()`, `add()`, and `remove()` methods": [
+      {
+        "executionId": "337dfb97-8e2d-4b55-ac14-c2c892cdde1e",
+        "chatSessionId": "sess_965dc301-b505-4dd5-84e8-ef3a806ff1b1",
+        "timestamp": 1789758576434
+      },
+      {
+        "executionId": "337dfb97-8e2d-4b55-ac14-c2c892cdde1e",
+        "chatSessionId": "sess_965dc301-b505-4dd5-84e8-ef3a806ff1b1",
+        "timestamp": 1789758637328
+      }
+    ],
+    "6.1 Write `ChartService` with `aggregate()` method": [
+      {
+        "executionId": "a505a25c-8a08-47b4-b2f7-29b7fa15af14",
+        "chatSessionId": "sess_64e395aa-a9e4-43fc-a225-22b70ce40286",
+        "timestamp": 1789758673856
+      },
+      {
+        "executionId": "a505a25c-8a08-47b4-b2f7-29b7fa15af14",
+        "chatSessionId": "sess_64e395aa-a9e4-43fc-a225-22b70ce40286",
+        "timestamp": 1789758902316
+      }
+    ],
+    "6. Implement `ChartService` in `js/app.js`": [
+      {
+        "executionId": "a505a25c-8a08-47b4-b2f7-29b7fa15af14",
+        "chatSessionId": "sess_64e395aa-a9e4-43fc-a225-22b70ce40286",
+        "timestamp": 1789758903200
+      }
+    ],
+    "7.1 Write `renderTransactionList()`, `renderBalance()`, and `renderCategories()`": [
+      {
+        "executionId": "fc74fb1b-1df6-4e17-9649-509d4dfd57f8",
+        "chatSessionId": "sess_d976ae98-4eec-40c6-856f-d5e8f6d2a6f8",
+        "timestamp": 1789758946791
+      },
+      {
+        "executionId": "fc74fb1b-1df6-4e17-9649-509d4dfd57f8",
+        "chatSessionId": "sess_d976ae98-4eec-40c6-856f-d5e8f6d2a6f8",
+        "timestamp": 1789759022922
+      }
+    ],
+    "7.2 Write `renderChart()`, `renderTheme()`, `showError()`, and `clearError()`": [
+      {
+        "executionId": "4223729e-4b04-4a1f-9f3e-294b2ac29cb7",
+        "chatSessionId": "sess_e8234d25-ec17-40a8-b0e0-6e4b903d001b",
+        "timestamp": 1789759044917
+      },
+      {
+        "executionId": "4223729e-4b04-4a1f-9f3e-294b2ac29cb7",
+        "chatSessionId": "sess_e8234d25-ec17-40a8-b0e0-6e4b903d001b",
+        "timestamp": 1789759282477
+      }
+    ],
+    "7. Implement render functions in `js/app.js`": [
+      {
+        "executionId": "4223729e-4b04-4a1f-9f3e-294b2ac29cb7",
+        "chatSessionId": "sess_e8234d25-ec17-40a8-b0e0-6e4b903d001b",
+        "timestamp": 1789759283383
+      }
+    ],
+    "8. Checkpoint — verify core services and rendering": [
+      {
+        "executionId": "d157a696-55ec-41c3-9e63-88c16f9f6727",
+        "chatSessionId": "sess_624babea-5ce4-498d-b053-275f041dd389",
+        "timestamp": 1789759338277
+      },
+      {
+        "executionId": "d157a696-55ec-41c3-9e63-88c16f9f6727",
+        "chatSessionId": "sess_624babea-5ce4-498d-b053-275f041dd389",
+        "timestamp": 1789759611497
+      }
+    ],
+    "9.1 Wire the transaction form submit handler": [
+      {
+        "executionId": "0d430a4c-c8f3-4f5e-bf5e-07b9eb603abd",
+        "chatSessionId": "sess_d5474606-a7f7-4fe6-8ee8-b4725d4871ca",
+        "timestamp": 1789759647888
+      },
+      {
+        "executionId": "0d430a4c-c8f3-4f5e-bf5e-07b9eb603abd",
+        "chatSessionId": "sess_d5474606-a7f7-4fe6-8ee8-b4725d4871ca",
+        "timestamp": 1789759742342
+      }
+    ],
+    "9.2 Wire the custom category form submit handler": [
+      {
+        "executionId": "b3336a02-22a5-45a9-8336-917222fedf70",
+        "chatSessionId": "sess_b159584d-92f8-4614-8a7e-60fc67c989d9",
+        "timestamp": 1789759795067
+      },
+      {
+        "executionId": "b3336a02-22a5-45a9-8336-917222fedf70",
+        "chatSessionId": "sess_b159584d-92f8-4614-8a7e-60fc67c989d9",
+        "timestamp": 1789759876940
+      }
+    ],
+    "9.3 Wire the delete button handler on the transaction list": [
+      {
+        "executionId": "e11eb189-34b5-44e4-a7fe-3c7cfafffcf1",
+        "chatSessionId": "sess_1abd3c08-0741-4999-8564-963f12e88818",
+        "timestamp": 1789759908694
+      },
+      {
+        "executionId": "7c618243-aeee-4fb6-b66f-2e0057166487",
+        "chatSessionId": "sess_b024b401-80c2-4481-b20e-b09c58d64680",
+        "timestamp": 1789761750708
+      },
+      {
+        "executionId": "7c618243-aeee-4fb6-b66f-2e0057166487",
+        "chatSessionId": "sess_b024b401-80c2-4481-b20e-b09c58d64680",
+        "timestamp": 1789761785722
+      }
+    ],
+    "9.4 Wire the sort control change handler": [
+      {
+        "executionId": "4a7b1eeb-177b-4882-b891-468a73011b5d",
+        "chatSessionId": "sess_d6100eea-34d8-4893-a90a-c5c5f47f4f15",
+        "timestamp": 1789761842194
+      },
+      {
+        "executionId": "4a7b1eeb-177b-4882-b891-468a73011b5d",
+        "chatSessionId": "sess_d6100eea-34d8-4893-a90a-c5c5f47f4f15",
+        "timestamp": 1789761894761
+      }
+    ],
+    "9.5 Wire the theme toggle handler and app initialization": [
+      {
+        "executionId": "0caaedc0-80f4-451f-b352-e084689b8469",
+        "chatSessionId": "sess_100447f5-9111-4513-8185-650904ae14e4",
+        "timestamp": 1789761920743
+      },
+      {
+        "executionId": "0caaedc0-80f4-451f-b352-e084689b8469",
+        "chatSessionId": "sess_100447f5-9111-4513-8185-650904ae14e4",
+        "timestamp": 1789762016132
+      }
+    ],
+    "9. Implement event handlers and wire everything together in `js/app.js`": [
+      {
+        "executionId": "0caaedc0-80f4-451f-b352-e084689b8469",
+        "chatSessionId": "sess_100447f5-9111-4513-8185-650904ae14e4",
+        "timestamp": 1789762016172
+      }
+    ],
+    "10. Final checkpoint — full integration and accessibility pass": [
+      {
+        "executionId": "90ac4962-76cd-4e38-96a2-73494dcb32ab",
+        "chatSessionId": "sess_e7d009a0-2e83-4903-956e-714d2290b382",
+        "timestamp": 1789762049441
+      },
+      {
+        "executionId": "90ac4962-76cd-4e38-96a2-73494dcb32ab",
+        "chatSessionId": "sess_e7d009a0-2e83-4903-956e-714d2290b382",
+        "timestamp": 1789762667953
+      }
+    ]
+  }
+}
